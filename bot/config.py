@@ -10,7 +10,8 @@ class Settings(BaseSettings):
 
     # FastAPI
     host: str = "0.0.0.0"
-    port: int = 8000
+    port: int = 8111
+    api_token: str = ""
 
     # Webhook (если пусто — используется polling)
     webhook_url: str = ""
