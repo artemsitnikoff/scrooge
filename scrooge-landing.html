@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCROOGE — Передача данных весового контроля в ФГИС УТКО</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800;900&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #F5A623;
+  --gold-dark: #D4851A;
+  --gold-light: #FFF8EC;
+  --gold-border: rgba(245,166,35,0.25);
+  --navy: #0E1E3D;
+  --navy2: #162B52;
+  --text: #111827;
+  --muted: #6B7280;
+  --bg: #F9F8F5;
+  --white: #FFFFFF;
+  --border: #E5E1D5;
+  --red: #DC2626;
+  --green: #16A34A;
+  --tg: #2AABEE;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { font-family:'Golos Text',sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden; }
+
+.topbar {
+  background: var(--gold);
+  text-align:center; padding:10px 20px;
+  font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.75rem;
+  color:var(--navy); letter-spacing:0.02em;
+}
+
+nav {
+  position:sticky; top:0; z-index:200;
+  background:rgba(249,248,245,0.95); backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 6%; height:62px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.logo {
+  font-family:'Unbounded',sans-serif; font-weight:900; font-size:1.2rem;
+  color:var(--navy); text-decoration:none; display:flex; align-items:center; gap:10px;
+}
+.logo-sub {
+  font-family:'Golos Text',sans-serif; font-weight:500; font-size:0.72rem;
+  color:var(--muted); display:block; margin-top:1px; letter-spacing:0;
+}
+.nav-links { display:flex; gap:28px; list-style:none; }
+.nav-links a { font-size:0.86rem; font-weight:500; color:var(--muted); text-decoration:none; transition:color .2s; }
+.nav-links a:hover { color:var(--navy); }
+.nav-btn {
+  background:var(--tg); color:#fff;
+  font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.72rem;
+  padding:10px 18px; border-radius:8px; text-decoration:none;
+  display:flex; align-items:center; gap:7px; transition:opacity .2s, transform .15s;
+}
+.nav-btn:hover { opacity:.88; transform:translateY(-1px); }
+
+/* HERO */
+.hero {
+  padding:72px 6% 64px;
+  display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:center;
+  position:relative; overflow:hidden;
+}
+.hero::after {
+  content:''; position:absolute; top:-250px; right:-250px;
+  width:700px; height:700px;
+  background:radial-gradient(circle, rgba(245,166,35,0.10) 0%, transparent 65%);
+  pointer-events:none;
+}
+.hero-eyebrow {
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--gold-light); border:1px solid var(--gold-border);
+  color:var(--gold-dark); font-weight:700; font-size:0.75rem;
+  padding:5px 14px; border-radius:20px; margin-bottom:20px;
+  animation:fD .5s ease both;
+}
+.hero h1 {
+  font-family:'Unbounded',sans-serif; font-weight:900;
+  font-size:clamp(1.8rem, 3vw, 2.9rem); line-height:1.16; color:var(--navy);
+  margin-bottom:22px; animation:fD .5s .08s ease both;
+}
+.hero h1 em { color:var(--gold); font-style:normal; }
+.hero-desc {
+  font-size:1.02rem; color:var(--muted); line-height:1.75;
+  max-width:490px; margin-bottom:34px; animation:fD .5s .16s ease both;
+}
+.btn-tg {
+  background:var(--tg); color:#fff;
+  font-family:'Unbounded',sans-serif; font-weight:800; font-size:0.85rem;
+  padding:16px 32px; border-radius:12px; text-decoration:none;
+  display:inline-flex; align-items:center; gap:10px;
+  transition:filter .2s, transform .15s, box-shadow .2s;
+  animation:fD .5s .24s ease both;
+}
+.btn-tg:hover { filter:brightness(1.07); transform:translateY(-2px); box-shadow:0 10px 28px rgba(42,171,238,.35); }
+.hero-note {
+  margin-top:12px; font-size:0.78rem; color:var(--muted);
+  animation:fD .5s .3s ease both;
+}
+.hero-stats {
+  display:flex; gap:32px; margin-top:40px;
+  padding-top:32px; border-top:1px solid var(--border);
+  animation:fD .5s .36s ease both;
+}
+.hs-n { font-family:'Unbounded',sans-serif; font-weight:900; font-size:1.9rem; color:var(--navy); line-height:1; }
+.hs-n span { color:var(--gold); }
+.hs-l { font-size:0.74rem; color:var(--muted); margin-top:4px; line-height:1.4; }
+
+/* TG PHONE MOCKUP */
+.tg-mock { animation:fL .7s .1s ease both; position:relative; }
+.tg-phone {
+  background:#fff; border:1.5px solid var(--border); border-radius:22px;
+  overflow:hidden; box-shadow:0 24px 64px rgba(14,30,61,.12), 0 4px 16px rgba(14,30,61,.06);
+  max-width:340px; margin:0 auto;
+}
+.tg-bar {
+  background:var(--navy); padding:13px 18px;
+  display:flex; align-items:center; gap:11px;
+}
+.tg-av {
+  width:38px; height:38px; border-radius:50%;
+  background:var(--gold); display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem; flex-shrink:0;
+}
+.tg-nm { font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.8rem; color:#fff; }
+.tg-st { font-size:0.68rem; color:rgba(255,255,255,.5); margin-top:2px; }
+.tg-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:#4ADE80; margin-right:4px; animation:blink 2s infinite; }
+
+.tg-body { padding:12px 11px; background:#EEF0F3; display:flex; flex-direction:column; gap:9px; min-height:370px; }
+
+/* Шапка статус-карточка */
+.status-card {
+  background:var(--navy); border-radius:14px; padding:13px 15px; color:#fff;
+}
+.sc-title { font-family:'Unbounded',sans-serif; font-weight:800; font-size:0.68rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px; }
+.sc-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:7px; font-size:0.78rem; font-weight:600; }
+.sc-row:last-of-type { margin-bottom:0; }
+.s-ok { background:rgba(74,222,128,.15); color:#4ADE80; font-size:0.67rem; font-weight:700; padding:2px 9px; border-radius:10px; }
+.s-q { background:rgba(251,191,36,.15); color:#FBBF24; font-size:0.67rem; font-weight:700; padding:2px 9px; border-radius:10px; }
+.s-off { background:rgba(248,113,113,.15); color:#F87171; font-size:0.67rem; font-weight:700; padding:2px 9px; border-radius:10px; }
+.sc-div { height:1px; background:rgba(255,255,255,.08); margin:9px 0; }
+.sc-prog-label { display:flex; justify-content:space-between; font-size:0.68rem; color:rgba(255,255,255,.5); margin-bottom:5px; }
+.sc-bar { height:5px; background:rgba(255,255,255,.1); border-radius:3px; overflow:hidden; }
+.sc-fill { height:100%; background:linear-gradient(90deg,var(--gold),#fff); border-radius:3px; width:78%; animation:fillBar 2.5s 1s ease both; }
+
+/* Messages */
+.msg { display:flex; flex-direction:column; }
+.msg.bot { align-items:flex-start; }
+.msg.usr { align-items:flex-end; }
+.bbl { padding:9px 13px; border-radius:14px; font-size:0.78rem; line-height:1.55; max-width:90%; }
+.bbl.bot { background:#fff; color:var(--text); border-bottom-left-radius:3px; }
+.bbl.usr { background:var(--tg); color:#fff; border-bottom-right-radius:3px; }
+.bbl b { font-weight:700; }
+.chip { display:inline-block; background:var(--gold-light); color:var(--gold-dark); font-size:0.65rem; font-weight:700; padding:1px 7px; border-radius:8px; margin-top:4px; }
+.msg-t { font-size:0.6rem; color:var(--muted); padding:2px 4px; }
+
+.attach {
+  background:#fff; border-radius:12px; padding:9px 13px;
+  display:flex; align-items:center; gap:9px; border:1.5px solid #E0E0E0;
+}
+.att-name { font-size:0.76rem; font-weight:600; color:var(--text); }
+.att-sz { font-size:0.66rem; color:var(--muted); }
+.att-ok { margin-left:auto; font-size:0.7rem; font-weight:700; color:var(--green); }
+
+.tg-input-bar {
+  padding:9px 11px; background:#fff; border-top:1px solid var(--border);
+  display:flex; align-items:center; gap:8px;
+}
+.tg-inp {
+  flex:1; background:#EEF0F3; border:none; border-radius:20px;
+  padding:8px 14px; font-size:0.76rem; color:var(--muted);
+  font-family:'Golos Text',sans-serif;
+}
+.tg-snd {
+  width:34px; height:34px; background:var(--tg); border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; font-size:0.9rem; flex-shrink:0;
+}
+.badge-float {
+  position:absolute; top:-12px; right:-14px;
+  background:var(--navy); color:#fff;
+  font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.64rem;
+  padding:7px 12px; border-radius:10px;
+  box-shadow:0 4px 16px rgba(14,30,61,.25);
+  animation:bob 2.5s 2s ease infinite;
+}
+
+/* DARK STRIP */
+.dark { background:var(--navy); padding:60px 6%; color:#fff; text-align:center; }
+.dark h2 { font-family:'Unbounded',sans-serif; font-weight:900; font-size:clamp(1.4rem,2.4vw,2.1rem); line-height:1.3; margin-bottom:12px; }
+.dark h2 .gld { color:var(--gold); }
+.dark .dsub { font-size:0.98rem; color:rgba(255,255,255,.6); max-width:660px; margin:0 auto 44px; line-height:1.7; }
+.pcards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; max-width:900px; margin:0 auto; text-align:left; }
+.pc { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:16px; padding:24px 20px; transition:background .2s, transform .2s; }
+.pc:hover { background:rgba(255,255,255,.09); transform:translateY(-4px); }
+.pc-em { font-size:1.8rem; margin-bottom:11px; display:block; }
+.pc h3 { font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.85rem; margin-bottom:7px; }
+.pc p { font-size:0.8rem; color:rgba(255,255,255,.56); line-height:1.65; }
+
+/* SECTIONS */
+.sec { padding:76px 6%; }
+.sec-w { padding:76px 6%; background:var(--white); }
+.tag { display:inline-block; font-family:'Unbounded',sans-serif; font-weight:600; font-size:0.67rem; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-dark); background:var(--gold-light); border:1px solid var(--gold-border); padding:5px 12px; border-radius:20px; margin-bottom:13px; }
+.sh { font-family:'Unbounded',sans-serif; font-weight:900; font-size:clamp(1.5rem,2.5vw,2.2rem); color:var(--navy); line-height:1.2; margin-bottom:13px; }
+.ss { font-size:0.96rem; color:var(--muted); line-height:1.75; max-width:550px; margin-bottom:50px; }
+.bar { width:50px; height:4px; background:var(--gold); border-radius:2px; margin-bottom:18px; }
+
+/* Steps */
+.steps { display:grid; grid-template-columns:repeat(5,1fr); gap:0; position:relative; }
+.steps::before { content:''; position:absolute; top:31px; left:7%; right:7%; height:2px; background:linear-gradient(90deg,var(--gold),var(--navy)); z-index:0; }
+.step { text-align:center; padding:0 9px; position:relative; z-index:1; }
+.step-b { width:62px; height:62px; border-radius:50%; background:#fff; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:1.4rem; transition:all .3s; }
+.step:hover .step-b { background:var(--gold); border-color:var(--gold); transform:scale(1.09); box-shadow:0 8px 24px rgba(245,166,35,.28); }
+.step h4 { font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.73rem; color:var(--navy); margin-bottom:5px; line-height:1.3; }
+.step p { font-size:0.73rem; color:var(--muted); line-height:1.6; }
+
+/* Excel */
+.excel-wrap { display:grid; grid-template-columns:1fr 1fr; gap:52px; align-items:center; }
+.excel-card { background:#fff; border:1.5px solid var(--border); border-radius:18px; overflow:hidden; box-shadow:0 12px 40px rgba(14,30,61,.07); }
+.excel-head { background:#1D6F42; padding:10px 16px; display:flex; align-items:center; gap:8px; }
+.excel-head span { font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.72rem; color:#fff; }
+.etbl { width:100%; border-collapse:collapse; font-size:0.74rem; }
+.etbl th { background:#F0FDF4; color:#166534; font-weight:700; font-size:0.67rem; padding:8px 11px; text-align:left; border-bottom:1px solid #BBF7D0; }
+.etbl td { padding:8px 11px; border-bottom:1px solid #F3F4F6; }
+.etbl tr:last-child td { border:none; }
+.etbl tr:nth-child(even) td { background:#FAFAFA; }
+.ok { color:var(--green); font-weight:700; font-size:0.67rem; }
+.wn { color:#D97706; font-weight:700; font-size:0.67rem; }
+.excel-txt h3 { font-family:'Unbounded',sans-serif; font-weight:800; font-size:1.35rem; color:var(--navy); margin-bottom:12px; line-height:1.3; }
+.excel-txt p { font-size:0.9rem; color:var(--muted); line-height:1.75; margin-bottom:18px; }
+.pts { list-style:none; display:flex; flex-direction:column; gap:11px; }
+.pts li { display:flex; gap:11px; align-items:flex-start; font-size:0.86rem; line-height:1.6; }
+.pts li::before { content:'✓'; color:var(--green); font-weight:700; flex-shrink:0; margin-top:2px; }
+
+/* Features */
+.feats { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+.fc { background:#fff; border:1.5px solid var(--border); border-radius:16px; padding:28px 24px; transition:transform .2s, box-shadow .2s, border-color .2s; position:relative; overflow:hidden; }
+.fc::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--gold),transparent); opacity:0; transition:opacity .2s; }
+.fc:hover { transform:translateY(-5px); box-shadow:0 16px 40px rgba(14,30,61,.09); border-color:var(--gold); }
+.fc:hover::before { opacity:1; }
+.fi { width:46px; height:46px; background:var(--gold-light); border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:1.35rem; margin-bottom:16px; }
+.fc h4 { font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.88rem; color:var(--navy); margin-bottom:8px; }
+.fc p { font-size:0.82rem; color:var(--muted); line-height:1.7; }
+
+/* Whom */
+.whom { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+.wc { display:flex; gap:16px; align-items:flex-start; padding:24px; background:#fff; border:1.5px solid var(--border); border-radius:16px; transition:border-color .2s, transform .2s; }
+.wc:hover { border-color:var(--gold); transform:translateY(-3px); }
+.wi { font-size:1.9rem; width:50px; height:50px; background:var(--gold-light); border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.wc h4 { font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.84rem; color:var(--navy); margin-bottom:5px; }
+.wc p { font-size:0.8rem; color:var(--muted); line-height:1.65; }
+
+/* Why */
+.why-box { background:var(--gold-light); border:1.5px solid var(--gold-border); border-radius:22px; padding:52px; display:grid; grid-template-columns:1fr 1fr; gap:52px; align-items:center; }
+.fine { font-family:'Unbounded',sans-serif; font-weight:900; font-size:3.5rem; color:var(--red); line-height:1; margin-bottom:8px; }
+.fine-l { font-size:0.92rem; color:var(--muted); line-height:1.5; }
+.wl { list-style:none; display:flex; flex-direction:column; gap:13px; }
+.wl li { display:flex; gap:11px; align-items:flex-start; font-size:0.88rem; line-height:1.65; }
+.wl li::before { content:'⚠️'; flex-shrink:0; margin-top:1px; }
+
+/* CTA */
+.cta { background:var(--navy); padding:76px 6%; text-align:center; position:relative; overflow:hidden; }
+.cta::before { content:'🦆'; position:absolute; font-size:18rem; opacity:.025; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; }
+.cta h2 { font-family:'Unbounded',sans-serif; font-weight:900; font-size:clamp(1.7rem,2.8vw,2.7rem); color:#fff; margin-bottom:13px; position:relative; }
+.cta h2 .gld { color:var(--gold); }
+.cta p { font-size:0.98rem; color:rgba(255,255,255,.6); max-width:460px; margin:0 auto 38px; line-height:1.75; position:relative; }
+.cta-btns { display:flex; gap:13px; justify-content:center; flex-wrap:wrap; position:relative; }
+.btn-tg-lg { background:var(--tg); color:#fff; font-family:'Unbounded',sans-serif; font-weight:800; font-size:0.86rem; padding:17px 34px; border-radius:12px; text-decoration:none; display:inline-flex; align-items:center; gap:10px; transition:filter .2s, transform .15s, box-shadow .2s; }
+.btn-tg-lg:hover { filter:brightness(1.08); transform:translateY(-2px); box-shadow:0 10px 28px rgba(42,171,238,.4); }
+.btn-ol { background:transparent; color:#fff; font-family:'Unbounded',sans-serif; font-weight:700; font-size:0.82rem; padding:17px 28px; border-radius:12px; text-decoration:none; border:2px solid rgba(255,255,255,.25); display:inline-flex; align-items:center; gap:8px; transition:border-color .2s, background .2s; }
+.btn-ol:hover { border-color:rgba(255,255,255,.6); background:rgba(255,255,255,.05); }
+
+footer { background:var(--navy); border-top:1px solid rgba(255,255,255,.07); padding:34px 6%; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:18px; }
+.fl { font-family:'Unbounded',sans-serif; font-weight:900; font-size:1.05rem; color:#fff; text-decoration:none; display:flex; align-items:center; gap:8px; }
+.fls { display:flex; gap:20px; }
+.fls a { font-size:0.78rem; color:rgba(255,255,255,.42); text-decoration:none; transition:color .2s; }
+.fls a:hover { color:var(--gold); }
+.fc2 { font-size:0.72rem; color:rgba(255,255,255,.22); }
+
+.rv { opacity:0; transform:translateY(26px); transition:opacity .6s ease, transform .6s ease; }
+.rv.on { opacity:1; transform:translateY(0); }
+
+@keyframes fD { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fL { from{opacity:0;transform:translateX(32px)} to{opacity:1;transform:translateX(0)} }
+@keyframes fillBar { from{width:0} to{width:78%} }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+@media(max-width:960px){
+  .hero{grid-template-columns:1fr; padding-top:56px;}
+  .tg-mock{order:-1;}
+  .steps{grid-template-columns:repeat(3,1fr); gap:26px;}
+  .steps::before{display:none;}
+  .excel-wrap{grid-template-columns:1fr;}
+  .feats{grid-template-columns:1fr 1fr;}
+  .pcards{grid-template-columns:1fr;}
+  .whom{grid-template-columns:1fr;}
+  .why-box{grid-template-columns:1fr; padding:34px;}
+  .nav-links{display:none;}
+}
+@media(max-width:600px){
+  .feats{grid-template-columns:1fr;}
+  .steps{grid-template-columns:1fr 1fr;}
+  .hero-stats{flex-wrap:wrap; gap:18px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">🦆 Первая неделя бесплатно — подключите свой полигон уже сегодня!</div>
+
+<nav>
+  <a href="#" class="logo">
+    <span>🦆</span>
+    <div>
+      <div>SCROOGE</div>
+      <span class="logo-sub">Передача взвешиваний в ФГИС УТКО</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#how">Как работает</a></li>
+    <li><a href="#excel">Excel</a></li>
+    <li><a href="#whom">Кому подходит</a></li>
+    <li><a href="#why">Почему сейчас</a></li>
+  </ul>
+  <a href="https://t.me/scrooge_bot" class="nav-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+    Открыть бот
+  </a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="hero-eyebrow">📡 Работает без интернета на объекте</div>
+    <h1>Передача данных<br>весового контроля<br><em>в ФГИС УТКО — офлайн</em></h1>
+    <p class="hero-desc">На полигоне нет интернета? Привезите данные на флешке — SCROOGE передаст их в ФГИС УТКО через Telegram-бот. Или сохраните в боте и он отправит автоматически, когда появится связь. Без веб-кабинета и установки ПО.</p>
+    <a href="https://t.me/scrooge_bot" class="btn-tg">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+      Открыть Telegram-бот
+    </a>
+    <p class="hero-note">🔓 Первая неделя бесплатно &nbsp;·&nbsp; Без договоров &nbsp;·&nbsp; Запуск за 15 минут</p>
+    <div class="hero-stats">
+      <div><div class="hs-n">1 345</div><div class="hs-l">объектов ТКО<br>в ФГИС УТКО</div></div>
+      <div><div class="hs-n">56<span>%</span></div><div class="hs-l">не передают<br>данные весового контроля</div></div>
+      <div><div class="hs-n">150<span>к</span></div><div class="hs-l">штраф за<br>каждый факт нарушения</div></div>
+    </div>
+  </div>
+
+  <div class="tg-mock">
+    <div class="badge-float">Всё в Telegram ✓</div>
+    <div class="tg-phone">
+      <div class="tg-bar">
+        <div class="tg-av">🦆</div>
+        <div>
+          <div class="tg-nm">SCROOGE</div>
+          <div class="tg-st"><span class="tg-dot"></span>Передача взвешиваний в ФГИС УТКО</div>
+        </div>
+      </div>
+      <div class="tg-body">
+
+        <div class="status-card">
+          <div class="sc-title">⚖️ Статус передачи · ФГИС УТКО</div>
+          <div class="sc-row">
+            <span>🏭 Полигон «Северный»</span>
+            <span class="s-ok">● Передаётся</span>
+          </div>
+          <div class="sc-row">
+            <span>🏭 Сортировка «Восток»</span>
+            <span class="s-q">● В очереди</span>
+          </div>
+          <div class="sc-row">
+            <span>🏭 Полигон «Южный»</span>
+            <span class="s-off">● Нет сети</span>
+          </div>
+          <div class="sc-div"></div>
+          <div class="sc-prog-label"><span>Синхронизация с ФГИС УТКО</span><span>78%</span></div>
+          <div class="sc-bar"><div class="sc-fill"></div></div>
+        </div>
+
+        <div class="msg bot">
+          <div class="bbl bot">
+            📎 Загрузите файл с данными весового контроля — Excel или JSON в формате ФГИС УТКО.<br>
+            <span class="chip">С флешки или выгрузки системы весов</span>
+          </div>
+          <span class="msg-t">10:31</span>
+        </div>
+
+        <div class="msg usr">
+          <div class="attach">
+            <span style="font-size:1.3rem">📊</span>
+            <div>
+              <div class="att-name">акты_октябрь_2025.xlsx</div>
+              <div class="att-sz">84 KB · 312 строк</div>
+            </div>
+            <span class="att-ok">✓</span>
+          </div>
+          <span class="msg-t">10:33</span>
+        </div>
+
+        <div class="msg bot">
+          <div class="bbl bot">
+            ✅ <b>312 записей проверено.</b><br>
+            Госномера ✓ · Вес въезд/выезд ✓ · Время ✓<br>
+            Дублей: 2 (пропущены) · <b>310 → отправляю в ФГИС УТКО</b>
+          </div>
+          <span class="msg-t">10:33</span>
+        </div>
+
+      </div>
+      <div class="tg-input-bar">
+        <div class="tg-inp">Отправить в ФГИС УТКО →</div>
+        <div class="tg-snd">➤</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN -->
+<div class="dark">
+  <h2>Весы есть. ФГИС требует данные.<br><span class="gld">Интернет пропадает.</span></h2>
+  <p class="dsub">С 1 января 2026 года весовой контроль на объектах ТКО обязателен. Штрафы уже идут.</p>
+  <div class="pcards">
+    <div class="pc"><span class="pc-em">📡</span><h3>Нет сети на полигоне</h3><p>Большинство объектов ТКО за городом — там, где мобильный сигнал слабый или отсутствует</p></div>
+    <div class="pc"><span class="pc-em">📋</span><h3>Данные не уходят в ФГИС</h3><p>Акты есть, весы работают — но без интернета данные просто не передаются. Каждый день просрочки — риск штрафа</p></div>
+    <div class="pc"><span class="pc-em">💸</span><h3>Штраф до 150 000 ₽</h3><p>За каждый факт непередачи данных — административная ответственность по постановлению №1657</p></div>
+  </div>
+</div>
+
+<!-- HOW -->
+<section class="sec" id="how">
+  <div class="rv">
+    <div class="bar"></div>
+    <div class="tag">Как это работает</div>
+    <h2 class="sh">5 шагов — всё в Telegram</h2>
+    <p class="ss">Никакого веб-кабинета, никакой установки. Telegram-бот делает всё сам.</p>
+  </div>
+  <div class="steps rv">
+    <div class="step"><div class="step-b">📱</div><h4>Открыть бот</h4><p>Регистрация за 1 минуту — без договоров</p></div>
+    <div class="step"><div class="step-b">🔑</div><h4>Вставить ключ ФГИС</h4><p>Ваш accessKey от РЭО — бот сохранит</p></div>
+    <div class="step"><div class="step-b">📊</div><h4>Загрузить файл с данными</h4><p>С флешки или из системы весов — Excel или JSON</p></div>
+    <div class="step"><div class="step-b">🛡</div><h4>Бот валидирует данные</h4><p>Проверяет номера ТС, вес, время, коды ФККО</p></div>
+    <div class="step"><div class="step-b">✅</div><h4>Передача в ФГИС УТКО</h4><p>Есть интернет — отправляет сразу. Нет — сохраняет и отправит когда появится</p></div>
+  </div>
+</section>
+
+<!-- EXCEL -->
+<section class="sec-w" id="excel">
+  <div class="excel-wrap rv">
+    <div class="excel-card">
+      <div class="excel-head"><span>📊</span><span>акты_октябрь_2025.xlsx</span></div>
+      <table class="etbl">
+        <thead><tr><th>Дата въезда</th><th>Госномер ТС</th><th>Вес въезд, кг</th><th>Вес выезд, кг</th><th>Вес ТКО, кг</th><th>Статус</th></tr></thead>
+        <tbody>
+          <tr><td>28.01 08:11</td><td>К332ПП777</td><td>23 120</td><td>13 850</td><td>9 190</td><td><span class="ok">✓ Отправлен</span></td></tr>
+          <tr><td>28.01 10:24</td><td>Р321ПП33</td><td>21 450</td><td>13 450</td><td>7 920</td><td><span class="ok">✓ Отправлен</span></td></tr>
+          <tr><td>28.01 10:08</td><td>О145НН33</td><td>24 580</td><td>10 242</td><td>14 243</td><td><span class="ok">✓ Отправлен</span></td></tr>
+          <tr><td>29.01 09:15</td><td>А777КК116</td><td>19 800</td><td>11 200</td><td>8 520</td><td><span class="wn">⏳ В очереди</span></td></tr>
+          <tr><td>29.01 11:40</td><td>В234УУ77</td><td>22 100</td><td>12 300</td><td>9 720</td><td><span class="wn">⏳ В очереди</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="excel-txt">
+      <div class="tag">Загрузка из Excel или JSON</div>
+      <h3>Привезли данные<br>на флешке?</h3>
+      <p>Выгрузите файл с весами прямо в Telegram-бот. SCROOGE проверит формат, валидирует каждую запись и передаст данные в ФГИС УТКО. Есть интернет — уйдёт сразу. Нет — сохранит и отправит когда появится.</p>
+      <ul class="pts">
+        <li>Принимает Excel и JSON в формате ФГИС УТКО (API v1)</li>
+        <li>Проверяет госномер ТС, вес въезда/выезда, время, код ФККО</li>
+        <li>Дубли по ID выгрузки пропускаются автоматически</li>
+        <li>Сохраняет очередь при отсутствии интернета — отправит сам</li>
+        <li>Уведомление в Telegram о каждом успешном акте в ФГИС</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="sec">
+  <div class="rv">
+    <div class="bar"></div>
+    <div class="tag">Возможности</div>
+    <h2 class="sh">Всё — через Telegram</h2>
+    <p class="ss">Управляйте несколькими полигонами из одного чата. Ни одной веб-страницы.</p>
+  </div>
+  <div class="feats rv">
+    <div class="fc"><div class="fi">💾</div><h4>Флешка или файл</h4><p>Выгрузите данные с весов на носитель, привезите к интернету и загрузите в бот — SCROOGE сам передаст в ФГИС УТКО</p></div>
+    <div class="fc"><div class="fi">🛰</div><h4>Офлайн-очередь</h4><p>Загрузили файл, но интернет пропал? Данные сохранятся в боте и уйдут в ФГИС автоматически при появлении связи</p></div>
+    <div class="fc"><div class="fi">📊</div><h4>Excel и JSON</h4><p>Принимаем файлы в формате ФГИС УТКО API v1. Поддерживаются все обязательные поля: госномер, вес, время, код ФККО</p></div>
+    <div class="fc"><div class="fi">🏭</div><h4>Несколько объектов</h4><p>Управляйте всеми полигонами и сортировочными комплексами в одном боте — статус по каждому</p></div>
+    <div class="fc"><div class="fi">🔔</div><h4>Push-уведомления</h4><p>Акты отправлены, ошибка валидации, восстановлена связь — всё приходит в Telegram мгновенно</p></div>
+    <div class="fc"><div class="fi">🛡</div><h4>Валидация данных</h4><p>Автопроверка каждой записи: госномер ТС (формат М000ММ55), вес въезда/выезда, дата в UTC, код ФККО — до отправки в ФГИС</p></div>
+    <div class="fc"><div class="fi">🔑</div><h4>Ваш ключ accessKey</h4><p>Используете собственный ключ от РЭО. Данные передаются от вашей организации напрямую в ФГИС УТКО</p></div>
+  </div>
+</section>
+
+<!-- FOR WHOM -->
+<section class="sec-w" id="whom">
+  <div class="rv">
+    <div class="bar"></div>
+    <div class="tag">Кому подходит</div>
+    <h2 class="sh">Ваш объект<br>попадает в список?</h2>
+    <p class="ss">SCROOGE создан для тех, кто работает там, куда интернет не доходит стабильно</p>
+  </div>
+  <div class="whom rv">
+    <div class="wc"><div class="wi">🏭</div><div><h4>Полигоны ТКО</h4><p>Объекты размещения отходов за городом — там, где мобильный сигнал нестабилен или отсутствует</p></div></div>
+    <div class="wc"><div class="wi">♻️</div><div><h4>Сортировочные комплексы</h4><p>Промышленные зоны с металлическими конструкциями, экранирующими сотовый сигнал</p></div></div>
+    <div class="wc"><div class="wi">🚛</div><div><h4>Региональные операторы ТКО</h4><p>Организации с несколькими объектами в разных районах, в том числе труднодоступных</p></div></div>
+    <div class="wc"><div class="wi">⚡</div><div><h4>Тем, кому нужно срочно</h4><p>Нет времени на долгое внедрение — SCROOGE запускается за 15 минут через Telegram-бот</p></div></div>
+  </div>
+</section>
+
+<!-- WHY NOW -->
+<section class="sec" id="why">
+  <div class="why-box rv">
+    <div>
+      <div class="tag">Почему прямо сейчас</div>
+      <div class="fine">150 000 ₽</div>
+      <div class="fine-l">штраф за каждый факт<br>непередачи данных в ФГИС УТКО<br>(постановление Правительства №1657)</div>
+    </div>
+    <ul class="wl">
+      <li>С 1 января 2026 года весовой контроль на объектах ТКО стал обязательным по всей России</li>
+      <li>Проверки идут — Ространснадзор и РЭО ведут мониторинг передачи данных</li>
+      <li>9 регионов полностью не передают данные — их объекты под прямым риском штрафов</li>
+      <li>«Нет интернета» не является уважительной причиной для регулятора</li>
+      <li>Полноценную автоматизацию внедрять долго и дорого — SCROOGE запускается за 15 минут</li>
+    </ul>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="cta">
+  <h2>Защитите свой полигон<br>от <span class="gld">штрафов сегодня</span></h2>
+  <p>Напишите в Telegram-бот — ответим на вопросы, покажем демо и подключим за 15 минут</p>
+  <div class="cta-btns">
+    <a href="https://t.me/scrooge_bot" class="btn-tg-lg">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.96 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+      Открыть Telegram-бот
+    </a>
+    <a href="/cdn-cgi/l/email-protection#e28b8c848da29181908d8d8587cc9097" class="btn-ol">✉️ Написать на email</a>
+  </div>
+</section>
+
+<footer>
+  <a href="#" class="fl">🦆 SCROOGE</a>
+  <div class="fls">
+    <a href="#">Политика конфиденциальности</a>
+    <a href="#">Пользовательское соглашение</a>
+    <a href="#">Контакты</a>
+  </div>
+  <div class="fc2">© 2026 SCROOGE. Все права защищены.</div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const obs = new IntersectionObserver(e => e.forEach(x => { if(x.isIntersecting) x.target.classList.add('on'); }), {threshold:0.08});
+document.querySelectorAll('.rv').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

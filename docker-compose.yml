@@ -1,0 +1,11 @@
+services:
+  bot:
+    build: ./bot
+    restart: unless-stopped
+    ports:
+      - "${SCROOGE_PORT:-8111}:8111"
+    env_file:
+      - ./bot/.env
+    volumes:
+      - ./data:/app/data
+      - ./bot/.env:/app/.env:ro

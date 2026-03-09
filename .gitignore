@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Environment
+.env
+bot/.env
+
+# Data (DB)
+data/
+bot/data/scrooge.db
+!bot/data/
+!bot/data/example.xlsx
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
