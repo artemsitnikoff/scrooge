@@ -15,6 +15,7 @@ from version import __version__
 from db import init_db
 from bot_factory import create_bot, create_dispatcher
 from services.utko_client import UTKOClient
+from services.subscription_checker import run_subscription_checker
 from api import router as api_router
 
 logging.basicConfig(
@@ -40,6 +41,8 @@ async def lifespan(app: FastAPI):
     # Service injection — доступны в хэндлерах как параметры функций
     utko_client = UTKOClient()
     dp["utko_client"] = utko_client
+
+    asyncio.create_task(run_subscription_checker(bot))
 
     if settings.webhook_url:
         webhook = settings.webhook_url.rstrip("/") + settings.webhook_path

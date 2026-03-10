@@ -6,6 +6,7 @@ def main_menu() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="⚙️ Общие настройки", callback_data="settings")],
         [InlineKeyboardButton(text="🏭 Управление объектами", callback_data="objects")],
         [InlineKeyboardButton(text="📤 Загрузить данные", callback_data="upload_data")],
+        [InlineKeyboardButton(text="💳 Подписка", callback_data="subscription")],
         [InlineKeyboardButton(text="📖 Все команды", callback_data="help")],
     ])
 
@@ -68,6 +69,27 @@ def back_to_menu() -> InlineKeyboardMarkup:
 def cancel() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_fsm")],
+    ])
+
+
+def subscription_tariffs(object_pk: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="💳 Оплатить месяц — 2 900 ₽",
+            callback_data=f"pay_month:{object_pk}",
+        )],
+        [InlineKeyboardButton(
+            text="💳 Оплатить год — 29 000 ₽",
+            callback_data=f"pay_year:{object_pk}",
+        )],
+        [InlineKeyboardButton(text="↩️ Меню", callback_data="main_menu")],
+    ])
+
+
+def subscription_renew(object_pk: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🔄 Продлить", callback_data=f"subscribe_obj:{object_pk}")],
+        [InlineKeyboardButton(text="↩️ Меню", callback_data="main_menu")],
     ])
 
 

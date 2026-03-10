@@ -37,6 +37,18 @@ async def init_db() -> None:
             )
         """)
         await conn.execute("""
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                object_db_id INTEGER NOT NULL REFERENCES objects(id),
+                user_id INTEGER NOT NULL,
+                plan TEXT NOT NULL,
+                activated_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                payment_id TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS queue (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 object_db_id INTEGER NOT NULL REFERENCES objects(id),
@@ -149,6 +161,111 @@ async def delete_object(pk: int, user_id: int) -> bool:
         )
         await conn.commit()
         return cursor.rowcount > 0
+    finally:
+        await conn.close()
+
+
+# --- subscriptions ---
+
+async def activate_subscription(
+    object_db_id: int, user_id: int, plan: str, payment_id: str | None = None
+) -> dict:
+    from datetime import datetime, timedelta
+
+    now = datetime.utcnow()
+    # Если есть активная подписка — продлеваем от её конца
+    current = await get_subscription(object_db_id)
+    if current and current["expires_at"] > now.isoformat():
+        base = datetime.fromisoformat(current["expires_at"])
+    else:
+        base = now
+
+    days = 365 if plan == "year" else 30
+    expires_at = base + timedelta(days=days)
+
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            """INSERT INTO subscriptions (object_db_id, user_id, plan, activated_at, expires_at, payment_id)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (object_db_id, user_id, plan, now.isoformat(), expires_at.isoformat(), payment_id),
+        )
+        await conn.commit()
+        return {
+            "id": cursor.lastrowid,
+            "expires_at": expires_at.isoformat(),
+        }
+    finally:
+        await conn.close()
+
+
+async def get_subscription(object_db_id: int) -> dict | None:
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            """SELECT * FROM subscriptions
+               WHERE object_db_id = ?
+               ORDER BY expires_at DESC LIMIT 1""",
+            (object_db_id,),
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+    finally:
+        await conn.close()
+
+
+async def is_subscription_active(object_db_id: int) -> bool:
+    from datetime import datetime
+
+    sub = await get_subscription(object_db_id)
+    if not sub:
+        return False
+    return sub["expires_at"] > datetime.utcnow().isoformat()
+
+
+async def get_expiring_subscriptions(days: int = 3) -> list[dict]:
+    """Подписки, истекающие в ближайшие N дней."""
+    from datetime import datetime, timedelta
+
+    now = datetime.utcnow().isoformat()
+    deadline = (datetime.utcnow() + timedelta(days=days)).isoformat()
+
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            """SELECT s.*, o.name AS object_name, o.id AS obj_pk
+               FROM subscriptions s
+               JOIN objects o ON s.object_db_id = o.id
+               WHERE s.expires_at > ? AND s.expires_at <= ?
+               AND s.id = (
+                   SELECT id FROM subscriptions s2
+                   WHERE s2.object_db_id = s.object_db_id
+                   ORDER BY s2.expires_at DESC LIMIT 1
+               )""",
+            (now, deadline),
+        )
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        await conn.close()
+
+
+async def get_subscriptions_for_user(user_id: int) -> list[dict]:
+    """Все объекты пользователя с информацией о подписке."""
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            """SELECT o.id, o.name, o.object_id,
+                      (SELECT expires_at FROM subscriptions s
+                       WHERE s.object_db_id = o.id
+                       ORDER BY s.expires_at DESC LIMIT 1) AS expires_at
+               FROM objects o
+               WHERE o.user_id = ?
+               ORDER BY o.created_at""",
+            (user_id,),
+        )
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows]
     finally:
         await conn.close()
 

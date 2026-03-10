@@ -145,6 +145,17 @@ async def confirm_upload(
     await state.clear()
 
     obj = await db.get_object(object_db_id)
+
+    # Проверка подписки
+    if not await db.is_subscription_active(object_db_id):
+        await callback.message.answer(
+            f"❌ Подписка на объект «{obj['name']}» не активна.\n\n"
+            "Оформите подписку, чтобы передавать данные в ФГИС УТКО.",
+            reply_markup=keyboards.subscription_tariffs(object_db_id),
+        )
+        await callback.answer()
+        return
+
     access_key = await db.get_access_key(callback.from_user.id)
 
     sending_msg = await callback.message.answer(
