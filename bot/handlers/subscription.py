@@ -39,17 +39,40 @@ async def show_subscriptions(callback: CallbackQuery) -> None:
             if days_left <= 3:
                 parts.append(f"🏭 «{s['name']}» — ⚠️ истекает через {days_left} дн. ({exp_date})")
                 buttons.append([keyboards.InlineKeyboardButton(
-                    text=f"🔄 Продлить «{s['name']}»",
-                    callback_data=f"subscribe_obj:{s['id']}",
+                    text=f"🔄 Продлить «{s['name']}» — месяц 2 900 ₽",
+                    callback_data=f"pay_month:{s['id']}",
+                )])
+                buttons.append([keyboards.InlineKeyboardButton(
+                    text=f"🔄 Продлить «{s['name']}» — год 29 000 ₽",
+                    callback_data=f"pay_year:{s['id']}",
                 )])
             else:
                 parts.append(f"🏭 «{s['name']}» — ✅ до {exp_date}")
         else:
             parts.append(f"🏭 «{s['name']}» — ❌ не оформлена")
             buttons.append([keyboards.InlineKeyboardButton(
-                text=f"💳 Подключить «{s['name']}»",
-                callback_data=f"subscribe_obj:{s['id']}",
+                text=f"📅 «{s['name']}» — месяц 2 900 ₽",
+                callback_data=f"pay_month:{s['id']}",
             )])
+            buttons.append([keyboards.InlineKeyboardButton(
+                text=f"🗓 «{s['name']}» — год 29 000 ₽ 🔥",
+                callback_data=f"pay_year:{s['id']}",
+            )])
+
+    parts.append(
+        "\n━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "\n📅 Тариф «Месяц» — 2 900 ₽\n"
+        "Доступ к сервису SCROOGE на 30 дней для 1 объекта. "
+        "Включает: неограниченное количество передач данных "
+        "весового контроля в ФГИС УТКО, валидацию файлов, "
+        "уведомления об успешной передаче.\n"
+        "\n🗓 Тариф «Год» — 29 000 ₽\n"
+        "Доступ к сервису SCROOGE на 365 дней для 1 объекта. "
+        "Включает: неограниченное количество передач данных "
+        "весового контроля в ФГИС УТКО, валидацию файлов, "
+        "уведомления об успешной передаче. "
+        "Экономия 5 800 ₽ по сравнению с месячной оплатой."
+    )
 
     buttons.append([keyboards.InlineKeyboardButton(text="↩️ Меню", callback_data="main_menu")])
 
