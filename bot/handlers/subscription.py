@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from aiogram import Bot, Router, F
@@ -148,7 +149,9 @@ async def _send_invoice(callback: CallbackQuery, bot: Bot, object_pk: int, plan:
             "Экономия 5 800 ₽ по сравнению с месячной оплатой."
         )
         amount = _YEAR_PRICE
+        amount_rub = 29000
         label = "Доступ к сервису SCROOGE на 365 дней"
+        item_description = "Доступ к сервису SCROOGE на 365 дней для 1 объекта"
     else:
         title = "SCROOGE — тариф «Месяц»"
         description = (
@@ -159,9 +162,30 @@ async def _send_invoice(callback: CallbackQuery, bot: Bot, object_pk: int, plan:
             "уведомления об успешной передаче."
         )
         amount = _MONTH_PRICE
+        amount_rub = 2900
         label = "Доступ к сервису SCROOGE на 30 дней"
+        item_description = "Доступ к сервису SCROOGE на 30 дней для 1 объекта"
 
     payload = f"sub_{plan}_{object_pk}_{callback.from_user.id}"
+
+    provider_data = json.dumps({
+        "receipt": {
+            "items": [
+                {
+                    "description": item_description,
+                    "quantity": 1,
+                    "amount": {
+                        "value": amount_rub,
+                        "currency": "RUB",
+                    },
+                    "vat_code": 1,
+                    "payment_mode": "full_payment",
+                    "payment_subject": "service",
+                }
+            ],
+            "tax_system_code": 1,
+        }
+    })
 
     await bot.send_invoice(
         chat_id=callback.from_user.id,
@@ -171,6 +195,9 @@ async def _send_invoice(callback: CallbackQuery, bot: Bot, object_pk: int, plan:
         provider_token=settings.provider_token,
         currency="RUB",
         prices=[LabeledPrice(label=label, amount=amount)],
+        need_email=True,
+        send_email_to_provider=True,
+        provider_data=provider_data,
     )
     await callback.answer()
 
