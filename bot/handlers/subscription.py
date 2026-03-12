@@ -183,7 +183,7 @@ async def _send_invoice(callback: CallbackQuery, bot: Bot, object_pk: int, plan:
                     "payment_subject": "service",
                 }
             ],
-            "tax_system_code": 1,
+            "tax_system_code": 2,
         }
     })
 
