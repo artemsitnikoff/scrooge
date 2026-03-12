@@ -1,5 +1,4 @@
 import json
-import os
 from datetime import datetime
 
 from aiogram import Bot, Router, F
@@ -113,10 +112,6 @@ async def show_tariffs(callback: CallbackQuery) -> None:
 
 # --- Оферта + Оплата ---
 
-_OFFER_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "offer.docx"
-)
-
 
 @router.callback_query(F.data.startswith("pay_month:"))
 async def pay_month(callback: CallbackQuery, bot: Bot) -> None:
@@ -130,20 +125,21 @@ async def pay_year(callback: CallbackQuery, bot: Bot) -> None:
     await _send_offer(callback, pk, "year")
 
 
+_OFFER_URL = "https://disk.yandex.ru/i/1gkKz_w5NkmmLA"
+
+
 async def _send_offer(callback: CallbackQuery, object_pk: int, plan: str) -> None:
-    """Отправить оферту и кнопку подтверждения."""
-    from aiogram.types import FSInputFile
-
-    await callback.message.answer_document(
-        FSInputFile(_OFFER_PATH, filename="SCROOGE_Пользовательское_соглашение.docx"),
-        caption="📄 Ознакомьтесь с пользовательским соглашением (офертой).",
-    )
-
+    """Показать ссылку на оферту и кнопку подтверждения."""
     tariff = "месяц — 2 900 ₽" if plan == "month" else "год — 29 000 ₽"
     await callback.message.answer(
+        f"📄 Перед оплатой ознакомьтесь с пользовательским соглашением.\n\n"
         f"Нажимая «Согласен, оплатить», вы принимаете условия оферты.\n"
         f"Тариф: {tariff}",
         reply_markup=keyboards.InlineKeyboardMarkup(inline_keyboard=[
+            [keyboards.InlineKeyboardButton(
+                text="📄 Пользовательское соглашение",
+                url=_OFFER_URL,
+            )],
             [keyboards.InlineKeyboardButton(
                 text="✅ Согласен, оплатить",
                 callback_data=f"accept_pay_{plan}:{object_pk}",
