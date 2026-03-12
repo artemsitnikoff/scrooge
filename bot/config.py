@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     api_token: str = ""
     provider_token: str = ""
 
+    # ЮKassa
+    yukassa_shop_id: str = ""
+    yukassa_secret_key: str = ""
+
     # Webhook (если пусто — используется polling)
     webhook_url: str = ""
     webhook_path: str = "/webhook/telegram"
