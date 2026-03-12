@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 
 from aiogram import Bot, Router, F
@@ -110,16 +111,56 @@ async def show_tariffs(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
-# --- Оплата ---
+# --- Оферта + Оплата ---
+
+_OFFER_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "offer.docx")
+
 
 @router.callback_query(F.data.startswith("pay_month:"))
 async def pay_month(callback: CallbackQuery, bot: Bot) -> None:
     pk = int(callback.data.split(":")[1])
-    await _send_invoice(callback, bot, pk, "month")
+    await _send_offer(callback, pk, "month")
 
 
 @router.callback_query(F.data.startswith("pay_year:"))
 async def pay_year(callback: CallbackQuery, bot: Bot) -> None:
+    pk = int(callback.data.split(":")[1])
+    await _send_offer(callback, pk, "year")
+
+
+async def _send_offer(callback: CallbackQuery, object_pk: int, plan: str) -> None:
+    """Отправить оферту и кнопку подтверждения."""
+    from aiogram.types import FSInputFile
+
+    if os.path.exists(_OFFER_PATH):
+        await callback.message.answer_document(
+            FSInputFile(_OFFER_PATH, filename="SCROOGE_Пользовательское_соглашение.docx"),
+            caption="📄 Ознакомьтесь с пользовательским соглашением (офертой).",
+        )
+
+    tariff = "месяц — 2 900 ₽" if plan == "month" else "год — 29 000 ₽"
+    await callback.message.answer(
+        f"Нажимая «Согласен, оплатить», вы принимаете условия оферты.\n"
+        f"Тариф: {tariff}",
+        reply_markup=keyboards.InlineKeyboardMarkup(inline_keyboard=[
+            [keyboards.InlineKeyboardButton(
+                text="✅ Согласен, оплатить",
+                callback_data=f"accept_pay_{plan}:{object_pk}",
+            )],
+            [keyboards.InlineKeyboardButton(text="↩️ Назад", callback_data="subscription")],
+        ]),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("accept_pay_month:"))
+async def accept_month(callback: CallbackQuery, bot: Bot) -> None:
+    pk = int(callback.data.split(":")[1])
+    await _send_invoice(callback, bot, pk, "month")
+
+
+@router.callback_query(F.data.startswith("accept_pay_year:"))
+async def accept_year(callback: CallbackQuery, bot: Bot) -> None:
     pk = int(callback.data.split(":")[1])
     await _send_invoice(callback, bot, pk, "year")
 
