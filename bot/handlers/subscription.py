@@ -113,7 +113,9 @@ async def show_tariffs(callback: CallbackQuery) -> None:
 
 # --- Оферта + Оплата ---
 
-_OFFER_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "offer.docx")
+_OFFER_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "offer.docx"
+)
 
 
 @router.callback_query(F.data.startswith("pay_month:"))
@@ -132,11 +134,10 @@ async def _send_offer(callback: CallbackQuery, object_pk: int, plan: str) -> Non
     """Отправить оферту и кнопку подтверждения."""
     from aiogram.types import FSInputFile
 
-    if os.path.exists(_OFFER_PATH):
-        await callback.message.answer_document(
-            FSInputFile(_OFFER_PATH, filename="SCROOGE_Пользовательское_соглашение.docx"),
-            caption="📄 Ознакомьтесь с пользовательским соглашением (офертой).",
-        )
+    await callback.message.answer_document(
+        FSInputFile(_OFFER_PATH, filename="SCROOGE_Пользовательское_соглашение.docx"),
+        caption="📄 Ознакомьтесь с пользовательским соглашением (офертой).",
+    )
 
     tariff = "месяц — 2 900 ₽" if plan == "month" else "год — 29 000 ₽"
     await callback.message.answer(
