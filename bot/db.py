@@ -49,6 +49,36 @@ async def init_db() -> None:
             )
         """)
         await conn.execute("""
+            CREATE TABLE IF NOT EXISTS accounts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                telegram_id INTEGER UNIQUE,
+                email TEXT UNIQUE,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS otp_codes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL,
+                code TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                used INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS web_payments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                yukassa_payment_id TEXT UNIQUE NOT NULL,
+                user_id INTEGER NOT NULL,
+                object_db_id INTEGER NOT NULL,
+                plan TEXT NOT NULL,
+                amount INTEGER NOT NULL,
+                status TEXT DEFAULT 'pending',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS queue (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 object_db_id INTEGER NOT NULL REFERENCES objects(id),
@@ -358,5 +388,178 @@ async def get_queue_stats(user_id: int) -> list[dict]:
         )
         rows = await cursor.fetchall()
         return [dict(r) for r in rows]
+    finally:
+        await conn.close()
+
+
+# --- accounts (ЛК) ---
+
+_SYNTHETIC_ID_BASE = 9_000_000_000
+
+
+async def _next_synthetic_user_id() -> int:
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            "SELECT MAX(telegram_id) FROM users WHERE telegram_id >= ?",
+            (_SYNTHETIC_ID_BASE,),
+        )
+        row = await cursor.fetchone()
+        max_id = row[0]
+        return (max_id + 1) if max_id else _SYNTHETIC_ID_BASE
+    finally:
+        await conn.close()
+
+
+async def get_or_create_account_by_telegram(telegram_id: int) -> dict:
+    await ensure_user(telegram_id)
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            "SELECT * FROM accounts WHERE telegram_id = ?", (telegram_id,)
+        )
+        row = await cursor.fetchone()
+        if row:
+            return dict(row)
+        await conn.execute(
+            "INSERT INTO accounts (telegram_id) VALUES (?)", (telegram_id,)
+        )
+        await conn.commit()
+        cursor = await conn.execute(
+            "SELECT * FROM accounts WHERE telegram_id = ?", (telegram_id,)
+        )
+        row = await cursor.fetchone()
+        return dict(row)
+    finally:
+        await conn.close()
+
+
+async def get_or_create_account_by_email(email: str) -> dict:
+    email = email.lower().strip()
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            "SELECT * FROM accounts WHERE email = ?", (email,)
+        )
+        row = await cursor.fetchone()
+        if row:
+            return dict(row)
+        # Создаём синтетического пользователя в users
+        synthetic_id = await _next_synthetic_user_id()
+        await conn.execute(
+            "INSERT INTO users (telegram_id) VALUES (?)", (synthetic_id,)
+        )
+        await conn.execute(
+            "INSERT INTO accounts (telegram_id, email) VALUES (?, ?)",
+            (synthetic_id, email),
+        )
+        await conn.commit()
+        cursor = await conn.execute(
+            "SELECT * FROM accounts WHERE email = ?", (email,)
+        )
+        row = await cursor.fetchone()
+        return dict(row)
+    finally:
+        await conn.close()
+
+
+async def get_account(account_id: int) -> dict | None:
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            "SELECT * FROM accounts WHERE id = ?", (account_id,)
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+    finally:
+        await conn.close()
+
+
+async def get_user_id_for_account(account_id: int) -> int | None:
+    account = await get_account(account_id)
+    if not account:
+        return None
+    return account["telegram_id"]
+
+
+# --- OTP ---
+
+async def create_otp(email: str, code: str, expires_at: str) -> None:
+    conn = await _connect()
+    try:
+        await conn.execute(
+            "INSERT INTO otp_codes (email, code, expires_at) VALUES (?, ?, ?)",
+            (email.lower().strip(), code, expires_at),
+        )
+        await conn.commit()
+    finally:
+        await conn.close()
+
+
+async def verify_otp(email: str, code: str) -> bool:
+    from datetime import datetime
+
+    email = email.lower().strip()
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            """SELECT id, expires_at FROM otp_codes
+               WHERE email = ? AND code = ? AND used = 0
+               ORDER BY created_at DESC LIMIT 1""",
+            (email, code),
+        )
+        row = await cursor.fetchone()
+        if not row:
+            return False
+        if row["expires_at"] < datetime.utcnow().isoformat():
+            return False
+        await conn.execute(
+            "UPDATE otp_codes SET used = 1 WHERE id = ?", (row["id"],)
+        )
+        await conn.commit()
+        return True
+    finally:
+        await conn.close()
+
+
+# --- web_payments ---
+
+async def create_web_payment(
+    yukassa_payment_id: str, user_id: int, object_db_id: int, plan: str, amount: int
+) -> int:
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            """INSERT INTO web_payments (yukassa_payment_id, user_id, object_db_id, plan, amount)
+               VALUES (?, ?, ?, ?, ?)""",
+            (yukassa_payment_id, user_id, object_db_id, plan, amount),
+        )
+        await conn.commit()
+        return cursor.lastrowid
+    finally:
+        await conn.close()
+
+
+async def get_web_payment_by_yukassa_id(yukassa_payment_id: str) -> dict | None:
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            "SELECT * FROM web_payments WHERE yukassa_payment_id = ?",
+            (yukassa_payment_id,),
+        )
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+    finally:
+        await conn.close()
+
+
+async def update_web_payment_status(yukassa_payment_id: str, status: str) -> None:
+    conn = await _connect()
+    try:
+        await conn.execute(
+            "UPDATE web_payments SET status = ? WHERE yukassa_payment_id = ?",
+            (status, yukassa_payment_id),
+        )
+        await conn.commit()
     finally:
         await conn.close()

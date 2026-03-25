@@ -14,6 +14,13 @@ bot/data/scrooge.db
 !bot/data/
 !bot/data/example.xlsx
 
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Bot static (built frontend)
+bot/static/
+
 # IDE
 .idea/
 .vscode/

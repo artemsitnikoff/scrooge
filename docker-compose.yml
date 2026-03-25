@@ -1,6 +1,8 @@
 services:
   bot:
-    build: ./bot
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
     restart: unless-stopped
     ports:
       - "${SCROOGE_PORT:-8111}:8111"

@@ -22,6 +22,19 @@ class Settings(BaseSettings):
     webhook_url: str = ""
     webhook_path: str = "/webhook/telegram"
 
+    # Личный кабинет — JWT
+    jwt_secret: str = ""
+
+    # Личный кабинет — SMTP для OTP
+    smtp_host: str = ""
+    smtp_port: int = 465
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+
+    # Личный кабинет — base URL для ЮKassa return_url
+    web_base_url: str = ""
+
     model_config = {"env_file": ".env", "env_prefix": "SCROOGE_"}
 
 
