@@ -65,12 +65,9 @@ class YukassaClient:
                     }
                 ],
                 "tax_system_code": 2,
+                "customer": {"email": email or "noreply@utko-bot.ru"},
             },
         }
-
-        # Email для чека (если есть)
-        if email:
-            payload["receipt"]["customer"] = {"email": email}
 
         resp = await self._client.post(
             "/payments",

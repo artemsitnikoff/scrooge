@@ -77,6 +77,13 @@ async def create_payment(req: PayRequest, user: dict = Depends(get_current_user)
     payment_event(user["user_id"], "create_payment", object_db_id=req.object_db_id,
                   object_name=obj["name"], plan=req.plan, amount=plan_info["price"], result="creating")
 
+    # Получаем email из аккаунта для чека ЮKassa
+    account = await db.get_account(user["account_id"])
+    customer_email = account.get("email") if account else None
+    # Если email нет (вход через Telegram) — используем заглушку
+    if not customer_email:
+        customer_email = f"user{user['user_id']}@utko-bot.ru"
+
     from services.yukassa_client import YukassaClient
     client = YukassaClient()
     try:
@@ -86,6 +93,7 @@ async def create_payment(req: PayRequest, user: dict = Depends(get_current_user)
             user_id=user["user_id"],
             object_db_id=req.object_db_id,
             plan=req.plan,
+            email=customer_email,
         )
     except Exception as e:
         payment_event(user["user_id"], "create_payment", object_db_id=req.object_db_id,
