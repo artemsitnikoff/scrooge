@@ -23,15 +23,15 @@
             {{ obj.object_id.substring(0, 8) }}...
           </div>
           <span
-            :class="['badge', obj.subscription_active ? 'badge-success' : 'badge-danger']"
+            :class="['badge', obj.subscription_active ? 'badge-success' : 'badge-warning']"
             style="margin-top: 6px;"
           >
-            {{ obj.subscription_active ? 'Активна' : 'Неактивна' }}
+            {{ obj.subscription_active ? 'Подписка активна' : 'Подписка неактивна' }}
           </span>
         </div>
         <div style="display: flex; gap: 8px;">
-          <button class="btn btn-outline btn-sm" @click="startRename(obj)">✏️</button>
-          <button class="btn btn-danger btn-sm" @click="remove(obj)">🗑</button>
+          <button class="btn btn-outline btn-sm" @click="startRename(obj)" title="Переименовать">✏️</button>
+          <button class="btn btn-outline btn-sm" @click="remove(obj)" title="Удалить" style="color: var(--red);">✕</button>
         </div>
       </div>
     </div>
