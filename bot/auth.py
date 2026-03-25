@@ -23,7 +23,7 @@ def _get_secret() -> str:
 
 def create_access_token(account_id: int, user_id: int) -> str:
     payload = {
-        "sub": account_id,
+        "sub": str(account_id),
         "uid": user_id,
         "exp": datetime.utcnow() + ACCESS_TOKEN_EXPIRE,
         "type": "access",
@@ -33,7 +33,7 @@ def create_access_token(account_id: int, user_id: int) -> str:
 
 def create_refresh_token(account_id: int, user_id: int) -> str:
     payload = {
-        "sub": account_id,
+        "sub": str(account_id),
         "uid": user_id,
         "exp": datetime.utcnow() + REFRESH_TOKEN_EXPIRE,
         "type": "refresh",
@@ -60,7 +60,7 @@ async def get_current_user(
     if not creds:
         raise HTTPException(status_code=401, detail="Требуется авторизация")
     payload = decode_token(creds.credentials, "access")
-    return {"account_id": payload["sub"], "user_id": payload["uid"]}
+    return {"account_id": int(payload["sub"]), "user_id": payload["uid"]}
 
 
 def verify_telegram_login(data: dict) -> bool:
