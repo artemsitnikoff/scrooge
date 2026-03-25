@@ -23,7 +23,7 @@
             {{ obj.object_id.substring(0, 8) }}...
           </div>
           <span
-            :class="['badge', obj.subscription_active ? 'badge-success' : 'badge-warning']"
+            :class="['badge', obj.subscription_active ? 'badge-success' : 'badge-danger']"
             style="margin-top: 6px;"
           >
             {{ obj.subscription_active ? 'Подписка активна' : 'Подписка неактивна' }}
