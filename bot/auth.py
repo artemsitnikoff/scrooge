@@ -74,8 +74,12 @@ def verify_telegram_login(data: dict) -> bool:
     if auth_date and (time.time() - int(auth_date)) > 86400:
         return False
 
+    # Убираем пустые значения — Telegram их не передаёт,
+    # а Pydantic заполняет дефолтами, что ломает HMAC
+    filtered = {k: v for k, v in data.items() if v is not None and v != ""}
+
     # HMAC verification
     secret = hashlib.sha256(settings.bot_token.encode()).digest()
-    check_string = "\n".join(f"{k}={v}" for k, v in sorted(data.items()))
+    check_string = "\n".join(f"{k}={v}" for k, v in sorted(filtered.items()))
     h = hmac.new(secret, check_string.encode(), hashlib.sha256).hexdigest()
     return h == check_hash
