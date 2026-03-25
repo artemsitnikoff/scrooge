@@ -51,6 +51,12 @@
       </div>
       <input ref="fileInput" type="file" accept=".xlsx,.xls,.json" hidden @change="onFileSelect" />
 
+      <div style="margin-top: 16px;">
+        <a href="/api/v2/download/example" download class="btn btn-outline btn-sm" style="text-decoration: none;">
+          📄 Скачать пример файла (.xlsx)
+        </a>
+      </div>
+
       <div v-if="uploading" style="margin-top: 16px; color: var(--muted);">Загрузка и парсинг файла...</div>
     </div>
 

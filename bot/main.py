@@ -89,6 +89,19 @@ async def telegram_webhook(update: dict) -> dict:
     return {"ok": True}
 
 
+# --- Скачивание примера файла ---
+_example_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "example.xlsx")
+
+
+@app.get("/api/v2/download/example")
+async def download_example():
+    if not os.path.isfile(_example_path):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    return FileResponse(_example_path, filename="example.xlsx",
+                        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
 # --- Личный кабинет (SPA) ---
 _dashboard_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "dashboard")
 
