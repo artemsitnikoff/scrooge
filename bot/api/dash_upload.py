@@ -8,6 +8,7 @@ from pydantic import BaseModel
 import db
 from auth import get_current_user
 from services.file_parser import parse_file
+from services.audit_log import upload_event
 
 router = APIRouter(prefix="/upload", tags=["Upload"])
 
@@ -40,11 +41,14 @@ async def upload_file(
 ):
     obj = await db.get_object(object_id)
     if not obj or obj["user_id"] != user["user_id"]:
+        upload_event(user["user_id"], "upload_file", object_db_id=object_id, result="not_found")
         raise HTTPException(status_code=404, detail="Объект не найден")
 
     # Проверка формата
     ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in (".xlsx", ".xls", ".json"):
+        upload_event(user["user_id"], "upload_file", object_db_id=object_id,
+                     filename=file.filename, result="bad_format")
         raise HTTPException(status_code=400, detail="Поддерживаются .xlsx, .xls, .json")
 
     # Сохранение во временный файл и парсинг
@@ -62,6 +66,9 @@ async def upload_file(
     import uuid
     cache_key = f"{user['user_id']}:{object_id}:{uuid.uuid4().hex[:8]}"
     _upload_cache[cache_key] = records
+
+    upload_event(user["user_id"], "upload_file", object_db_id=object_id, object_name=obj["name"],
+                 filename=file.filename, records=len(records), errors=len(errors), result="ok")
 
     return UploadPreviewResponse(
         records=records[:50],  # Первые 50 для превью
@@ -83,16 +90,20 @@ async def confirm_upload(
 
     records = _upload_cache.pop(req.cache_key, None)
     if not records:
+        upload_event(user["user_id"], "confirm_send", object_db_id=object_id, result="no_cache")
         raise HTTPException(status_code=400, detail="Нет данных для отправки. Загрузите файл заново.")
 
     # Проверка подписки
     active = await db.is_subscription_active(object_id)
     if not active:
+        upload_event(user["user_id"], "confirm_send", object_db_id=object_id,
+                     records=len(records), result="no_subscription")
         raise HTTPException(status_code=402, detail="Подписка неактивна. Оплатите подписку для отправки.")
 
     # Получаем ключ доступа
     key = await db.get_access_key(user["user_id"])
     if not key:
+        upload_event(user["user_id"], "confirm_send", object_db_id=object_id, result="no_key")
         raise HTTPException(status_code=400, detail="Ключ доступа не установлен")
 
     # Отправка в УТКО
@@ -102,6 +113,9 @@ async def confirm_upload(
         success, message = await client.send_records(obj["object_id"], key, records)
     finally:
         await client.close()
+
+    upload_event(user["user_id"], "confirm_send", object_db_id=object_id, object_name=obj["name"],
+                 records=len(records), success=success, utko_response=message[:200], result="ok" if success else "utko_error")
 
     if success:
         return ConfirmResponse(success=True, message=message, sent_count=len(records))

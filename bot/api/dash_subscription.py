@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 import db
 from auth import get_current_user
+from services.audit_log import subscription_event, payment_event
 
 router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
 
@@ -58,6 +59,7 @@ async def list_subscriptions(user: dict = Depends(get_current_user)):
             active=active,
             days_left=days_left,
         ))
+    subscription_event(user["user_id"], "list", count=len(result))
     return result
 
 
@@ -72,6 +74,9 @@ async def create_payment(req: PayRequest, user: dict = Depends(get_current_user)
 
     plan_info = PLANS[req.plan]
 
+    payment_event(user["user_id"], "create_payment", object_db_id=req.object_db_id,
+                  object_name=obj["name"], plan=req.plan, amount=plan_info["price"], result="creating")
+
     from services.yukassa_client import YukassaClient
     client = YukassaClient()
     try:
@@ -82,6 +87,10 @@ async def create_payment(req: PayRequest, user: dict = Depends(get_current_user)
             object_db_id=req.object_db_id,
             plan=req.plan,
         )
+    except Exception as e:
+        payment_event(user["user_id"], "create_payment", object_db_id=req.object_db_id,
+                      plan=req.plan, result=f"error: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка создания платежа")
     finally:
         await client.close()
 
@@ -92,6 +101,9 @@ async def create_payment(req: PayRequest, user: dict = Depends(get_current_user)
         plan=req.plan,
         amount=plan_info["price"],
     )
+
+    payment_event(user["user_id"], "create_payment", object_db_id=req.object_db_id,
+                  object_name=obj["name"], plan=req.plan, yukassa_id=payment["id"], result="ok")
 
     return PayResponse(
         payment_url=payment["confirmation_url"],
@@ -105,6 +117,7 @@ async def check_payment_status(payment_id: str, user: dict = Depends(get_current
     if not wp or wp["user_id"] != user["user_id"]:
         raise HTTPException(status_code=404, detail="Платёж не найден")
 
+    payment_event(user["user_id"], "check_status", yukassa_id=payment_id, status=wp["status"])
     return PaymentStatusResponse(
         status=wp["status"],
         paid=wp["status"] == "succeeded",

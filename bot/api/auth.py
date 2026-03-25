@@ -14,6 +14,7 @@ from auth import (
 )
 from config import settings
 from services.email_sender import is_smtp_configured, send_otp_email
+from services.audit_log import auth_event
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -69,16 +70,22 @@ async def get_auth_config():
 @router.post("/email/send-otp")
 async def send_otp(req: EmailSendOtpRequest):
     if not is_smtp_configured():
+        auth_event(None, "email_otp_send", email=req.email, result="smtp_not_configured",
+                   smtp_host=settings.smtp_host, smtp_user=settings.smtp_user,
+                   smtp_password_set=bool(settings.smtp_password))
         raise HTTPException(status_code=503, detail="Email-вход не настроен")
 
     code = "".join(random.choices(string.digits, k=6))
     expires_at = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
     await db.create_otp(req.email, code, expires_at)
 
+    auth_event(None, "email_otp_send", email=req.email, result="sending")
     sent = send_otp_email(req.email, code)
     if not sent:
+        auth_event(None, "email_otp_send", email=req.email, result="send_failed")
         raise HTTPException(status_code=500, detail="Не удалось отправить код")
 
+    auth_event(None, "email_otp_send", email=req.email, result="ok")
     return {"ok": True, "message": "Код отправлен на почту"}
 
 
@@ -86,11 +93,13 @@ async def send_otp(req: EmailSendOtpRequest):
 async def verify_otp(req: EmailVerifyOtpRequest):
     valid = await db.verify_otp(req.email, req.code)
     if not valid:
+        auth_event(None, "email_otp_verify", email=req.email, result="invalid_code")
         raise HTTPException(status_code=400, detail="Неверный или просроченный код")
 
     account = await db.get_or_create_account_by_email(req.email)
     user_id = account["telegram_id"]
 
+    auth_event(user_id, "email_otp_verify", email=req.email, account_id=account["id"], result="ok")
     return TokenResponse(
         access_token=create_access_token(account["id"], user_id),
         refresh_token=create_refresh_token(account["id"], user_id),
@@ -105,11 +114,13 @@ async def telegram_login(req: TelegramLoginRequest):
     telegram_id = data["id"]
 
     if not verify_telegram_login(data):
+        auth_event(telegram_id, "telegram_login", username=req.username, result="invalid_hash")
         raise HTTPException(status_code=400, detail="Невалидные данные Telegram")
 
     account = await db.get_or_create_account_by_telegram(telegram_id)
     user_id = account["telegram_id"]
 
+    auth_event(user_id, "telegram_login", username=req.username, account_id=account["id"], result="ok")
     return TokenResponse(
         access_token=create_access_token(account["id"], user_id),
         refresh_token=create_refresh_token(account["id"], user_id),
@@ -126,8 +137,10 @@ async def refresh_token(req: RefreshRequest):
 
     account = await db.get_account(account_id)
     if not account:
+        auth_event(user_id, "token_refresh", account_id=account_id, result="account_not_found")
         raise HTTPException(status_code=401, detail="Аккаунт не найден")
 
+    auth_event(user_id, "token_refresh", account_id=account_id, result="ok")
     return TokenResponse(
         access_token=create_access_token(account_id, user_id),
         refresh_token=create_refresh_token(account_id, user_id),

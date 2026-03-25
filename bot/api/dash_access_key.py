@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 import db
 from auth import get_current_user
+from services.audit_log import key_event
 
 router = APIRouter(tags=["Access Key"])
 
@@ -29,6 +30,7 @@ def _mask(key: str) -> str:
 @router.get("/access-key", response_model=AccessKeyResponse)
 async def get_access_key(user: dict = Depends(get_current_user)):
     key = await db.get_access_key(user["user_id"])
+    key_event(user["user_id"], "view", has_key=bool(key))
     return AccessKeyResponse(
         access_key=key,
         masked=_mask(key) if key else None,
@@ -38,8 +40,10 @@ async def get_access_key(user: dict = Depends(get_current_user)):
 @router.put("/access-key", response_model=AccessKeyResponse)
 async def set_access_key(req: AccessKeySetRequest, user: dict = Depends(get_current_user)):
     if not _UUID_RE.match(req.access_key):
+        key_event(user["user_id"], "set", result="invalid_format")
         raise HTTPException(status_code=422, detail="Неверный формат ключа (ожидается UUID)")
     await db.set_access_key(user["user_id"], req.access_key)
+    key_event(user["user_id"], "set", masked=_mask(req.access_key), result="ok")
     return AccessKeyResponse(
         access_key=req.access_key,
         masked=_mask(req.access_key),
@@ -49,4 +53,5 @@ async def set_access_key(req: AccessKeySetRequest, user: dict = Depends(get_curr
 @router.delete("/access-key")
 async def delete_access_key(user: dict = Depends(get_current_user)):
     await db.set_access_key(user["user_id"], None)
+    key_event(user["user_id"], "delete", result="ok")
     return {"ok": True}
