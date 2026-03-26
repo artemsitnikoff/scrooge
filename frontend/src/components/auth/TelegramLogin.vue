@@ -1,5 +1,10 @@
 <template>
-  <div ref="container" style="display: flex; justify-content: center;"></div>
+  <div>
+    <div ref="container" style="display: flex; justify-content: center;"></div>
+    <p v-if="widgetFailed" style="text-align: center; font-size: 0.78rem; color: var(--muted); margin-top: 8px;">
+      Виджет Telegram не загрузился. Отключите блокировщик рекламы или попробуйте другой браузер.
+    </p>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -12,6 +17,7 @@ import { useRouter } from 'vue-router'
 const props = defineProps<{ botUsername: string }>()
 
 const container = ref<HTMLElement>()
+const widgetFailed = ref(false)
 const auth = useAuth()
 const notifications = useNotifications()
 const router = useRouter()
@@ -37,6 +43,14 @@ onMounted(() => {
   script.setAttribute('data-radius', '10')
   script.setAttribute('data-onauth', 'onTelegramAuth(user)')
   script.setAttribute('data-request-access', 'write')
+  script.onerror = () => { widgetFailed.value = true }
   container.value.appendChild(script)
+
+  // Если через 5 секунд iframe не появился — значит заблокирован
+  setTimeout(() => {
+    if (container.value && !container.value.querySelector('iframe')) {
+      widgetFailed.value = true
+    }
+  }, 5000)
 })
 </script>
