@@ -7,6 +7,7 @@ def main_menu() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="🏭 Управление объектами", callback_data="objects")],
         [InlineKeyboardButton(text="📤 Загрузить данные", callback_data="upload_data")],
         [InlineKeyboardButton(text="💳 Подписка", callback_data="subscription")],
+        [InlineKeyboardButton(text="📋 История отправок", callback_data="history")],
         [InlineKeyboardButton(text="📖 Все команды", callback_data="help")],
     ])
 

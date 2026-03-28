@@ -36,6 +36,11 @@ const router = createRouter({
           component: () => import('@/views/SubscriptionView.vue'),
         },
         {
+          path: 'history',
+          name: 'history',
+          component: () => import('@/views/HistoryView.vue'),
+        },
+        {
           path: 'payment-result',
           name: 'payment-result',
           component: () => import('@/views/PaymentResultView.vue'),

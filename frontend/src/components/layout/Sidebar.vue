@@ -23,6 +23,10 @@
         <span class="icon">💳</span>
         <span>Подписка</span>
       </router-link>
+      <router-link to="/history">
+        <span class="icon">📋</span>
+        <span>История</span>
+      </router-link>
     </nav>
     <div class="sidebar-footer">
       <div style="margin-bottom: 8px; cursor: pointer; color: rgba(255,255,255,0.5);" @click="logout">

@@ -14,6 +14,7 @@ router = APIRouter(prefix="/upload", tags=["Upload"])
 
 # Временное хранение распарсенных записей (в памяти, по session)
 _upload_cache: dict[str, list[dict]] = {}
+_upload_filenames: dict[str, str] = {}
 
 
 class UploadPreviewResponse(BaseModel):
@@ -66,6 +67,7 @@ async def upload_file(
     import uuid
     cache_key = f"{user['user_id']}:{object_id}:{uuid.uuid4().hex[:8]}"
     _upload_cache[cache_key] = records
+    _upload_filenames[cache_key] = file.filename or "unknown"
 
     upload_event(user["user_id"], "upload_file", object_db_id=object_id, object_name=obj["name"],
                  filename=file.filename, records=len(records), errors=len(errors), result="ok")
@@ -116,6 +118,20 @@ async def confirm_upload(
 
     upload_event(user["user_id"], "confirm_send", object_db_id=object_id, object_name=obj["name"],
                  records=len(records), success=success, utko_response=message[:200], result="ok" if success else "utko_error")
+
+    # Сохраняем в историю
+    await db.save_upload_history(
+        user_id=user["user_id"],
+        object_db_id=object_id,
+        object_name=obj["name"],
+        filename=_upload_filenames.pop(req.cache_key, None),
+        record_count=len(records),
+        error_count=0,
+        records=records,
+        utko_success=success,
+        utko_response=message,
+        source="web",
+    )
 
     if success:
         return ConfirmResponse(success=True, message=message, sent_count=len(records))

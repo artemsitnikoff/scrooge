@@ -113,7 +113,7 @@ async def got_file(message: Message, state: FSMContext, bot: Bot) -> None:
         )
         return
 
-    await state.update_data(records=valid_records, error_count=len(errors))
+    await state.update_data(records=valid_records, error_count=len(errors), filename=doc.file_name)
     await state.set_state(Upload.confirm)
 
     data = await state.get_data()
@@ -167,6 +167,20 @@ async def confirm_upload(
     )
 
     await sending_msg.delete()
+
+    # Сохраняем в историю
+    await db.save_upload_history(
+        user_id=callback.from_user.id,
+        object_db_id=object_db_id,
+        object_name=obj["name"],
+        filename=data.get("filename"),
+        record_count=len(records),
+        error_count=data.get("error_count", 0),
+        records=records,
+        utko_success=success,
+        utko_response=message,
+        source="bot",
+    )
 
     if success:
         await callback.message.answer(

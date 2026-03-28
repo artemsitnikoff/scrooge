@@ -9,10 +9,12 @@ def setup_routers() -> Router:
     from .add_object import router as add_object_router
     from .upload import router as upload_router
     from .subscription import router as subscription_router
+    from .history import router as history_router
 
     root.include_router(start_router)
     root.include_router(settings_router)
     root.include_router(add_object_router)
     root.include_router(upload_router)
     root.include_router(subscription_router)
+    root.include_router(history_router)
     return root

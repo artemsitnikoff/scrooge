@@ -79,6 +79,22 @@ async def init_db() -> None:
             )
         """)
         await conn.execute("""
+            CREATE TABLE IF NOT EXISTS upload_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                object_db_id INTEGER NOT NULL,
+                object_name TEXT NOT NULL,
+                filename TEXT,
+                record_count INTEGER NOT NULL DEFAULT 0,
+                error_count INTEGER NOT NULL DEFAULT 0,
+                records_json TEXT,
+                utko_success INTEGER,
+                utko_response TEXT,
+                source TEXT NOT NULL DEFAULT 'web',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS queue (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 object_db_id INTEGER NOT NULL REFERENCES objects(id),
@@ -561,5 +577,78 @@ async def update_web_payment_status(yukassa_payment_id: str, status: str) -> Non
             (status, yukassa_payment_id),
         )
         await conn.commit()
+    finally:
+        await conn.close()
+
+
+# --- upload_history ---
+
+async def save_upload_history(
+    user_id: int,
+    object_db_id: int,
+    object_name: str,
+    filename: str | None,
+    record_count: int,
+    error_count: int,
+    records: list[dict],
+    utko_success: bool | None,
+    utko_response: str | None,
+    source: str = "web",
+) -> int:
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            """INSERT INTO upload_history
+               (user_id, object_db_id, object_name, filename, record_count,
+                error_count, records_json, utko_success, utko_response, source)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                user_id, object_db_id, object_name, filename, record_count,
+                error_count, json.dumps(records, ensure_ascii=False),
+                1 if utko_success else (0 if utko_success is not None else None),
+                utko_response, source,
+            ),
+        )
+        await conn.commit()
+        return cursor.lastrowid
+    finally:
+        await conn.close()
+
+
+async def get_upload_history(user_id: int, limit: int = 50, offset: int = 0) -> list[dict]:
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            """SELECT id, user_id, object_db_id, object_name, filename,
+                      record_count, error_count, utko_success, utko_response,
+                      source, created_at
+               FROM upload_history
+               WHERE user_id = ?
+               ORDER BY created_at DESC
+               LIMIT ? OFFSET ?""",
+            (user_id, limit, offset),
+        )
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        await conn.close()
+
+
+async def get_upload_history_detail(history_id: int, user_id: int) -> dict | None:
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            "SELECT * FROM upload_history WHERE id = ? AND user_id = ?",
+            (history_id, user_id),
+        )
+        row = await cursor.fetchone()
+        if not row:
+            return None
+        result = dict(row)
+        if result.get("records_json"):
+            result["records"] = json.loads(result["records_json"])
+        else:
+            result["records"] = []
+        return result
     finally:
         await conn.close()
