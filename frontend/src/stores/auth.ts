@@ -6,6 +6,7 @@ export const useAuth = defineStore('auth', () => {
   const refreshToken = ref(localStorage.getItem('refresh_token') || '')
   const userId = ref(Number(localStorage.getItem('user_id')) || 0)
   const accountId = ref(Number(localStorage.getItem('account_id')) || 0)
+  const appVersion = ref('')
 
   const isAuthenticated = computed(() => !!accessToken.value)
 
@@ -36,5 +37,5 @@ export const useAuth = defineStore('auth', () => {
     localStorage.removeItem('account_id')
   }
 
-  return { accessToken, refreshToken, userId, accountId, isAuthenticated, setTokens, logout }
+  return { accessToken, refreshToken, userId, accountId, appVersion, isAuthenticated, setTokens, logout }
 })

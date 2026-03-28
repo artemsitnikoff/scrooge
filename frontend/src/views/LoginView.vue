@@ -24,15 +24,18 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getAuthConfig } from '@/api/auth'
+import { useAuth } from '@/stores/auth'
 import TelegramLogin from '@/components/auth/TelegramLogin.vue'
 import EmailLogin from '@/components/auth/EmailLogin.vue'
 
+const auth = useAuth()
 const botUsername = ref('')
 
 onMounted(async () => {
   try {
     const { data } = await getAuthConfig()
     botUsername.value = data.bot_username
+    auth.appVersion = data.version
   } catch {
     // config недоступен
   }

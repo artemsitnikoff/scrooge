@@ -54,6 +54,7 @@ class TokenResponse(BaseModel):
 class ConfigResponse(BaseModel):
     bot_username: str
     smtp_enabled: bool
+    version: str
 
 
 # --- Endpoints ---
@@ -61,9 +62,11 @@ class ConfigResponse(BaseModel):
 @router.get("/config", response_model=ConfigResponse)
 async def get_auth_config():
     import main
+    from version import __version__
     return ConfigResponse(
         bot_username=main.bot_username,
         smtp_enabled=is_smtp_configured(),
+        version=__version__,
     )
 
 
