@@ -32,7 +32,7 @@
       <div style="margin-bottom: 8px; cursor: pointer; color: rgba(255,255,255,0.5);" @click="logout">
         Выйти
       </div>
-      <div>SCROOGE v1.4.0</div>
+      <div>SCROOGE v1.5.0</div>
     </div>
   </aside>
 </template>
